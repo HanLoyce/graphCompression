@@ -7,13 +7,13 @@ datasets/
 *.obj
 *.o
 
-# Benchmark outputs
-benchmark_results*.csv
-run_all_benchmark.log
+# # Benchmark outputs
+# benchmark_results*.csv
+# run_all_benchmark.log
 
-# Generated figures
-*_comparison.png
-*_comparison_v1.png
+# # Generated figures
+# *_comparison.png
+# *_comparison_v1.png
 
 # Archives
 *.zip

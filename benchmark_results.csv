@@ -1,0 +1,65 @@
+Dataset,Algorithm,Data_MB,BPE,MEPS,Correct
+com-amazon.ungraph,Uncompressed (32-bit),7.06384,32,227.703,1
+com-amazon.ungraph,Delta + VByte,4.81787,21.8255,111.509,1
+com-amazon.ungraph,Your Algorithm (Tree+VB),3.60717,16.3409,87.0021,1
+com-amazon.ungraph,Your Algorithm (Tree+VB SACT),3.24164,14.685,88.288,1
+Email-Enron,Uncompressed (32-bit),1.40252,32,637.774,1
+Email-Enron,Delta + VByte,0.492713,11.2418,193.077,1
+Email-Enron,Your Algorithm (Tree+VB),0.676541,15.436,165.455,1
+Email-Enron,Your Algorithm (Tree+VB SACT),0.559806,12.7726,156.23,1
+soc-LiveJournal1,Uncompressed (32-bit),326.929,32,747.88,1
+soc-LiveJournal1,Delta + VByte,167.995,16.4435,150.243,1
+soc-LiveJournal1,Your Algorithm (Tree+VB),238.278,23.3228,128.834,1
+soc-LiveJournal1,Your Algorithm (Tree+VB SACT),199.65,19.5418,128.619,1
+web-arabic-2005,Uncompressed (32-bit),13.3306,32,985.742,1
+web-arabic-2005,Delta + VByte,3.71098,8.90816,532.81,1
+web-arabic-2005,Your Algorithm (Tree+VB),1.33173,3.19682,473.722,1
+web-arabic-2005,Your Algorithm (Tree+VB SACT),1.109,2.66215,444.18,1
+web-baidu-baike-related,Uncompressed (32-bit),18.1125,32,640.197,1
+web-baidu-baike-related,Delta + VByte,6.41858,11.3399,202.123,1
+web-baidu-baike-related,Your Algorithm (Tree+VB),5.01052,8.85225,206.039,1
+web-baidu-baike-related,Your Algorithm (Tree+VB SACT),4.27789,7.55789,191.849,1
+web-BerkStan-dir,Uncompressed (32-bit),50.7314,32,950.386,1
+web-BerkStan-dir,Delta + VByte,15.7076,9.90789,417.524,1
+web-BerkStan-dir,Your Algorithm (Tree+VB),12.6181,7.95915,292.778,1
+web-BerkStan-dir,Your Algorithm (Tree+VB SACT),8.70365,5.49002,300.706,1
+web-edu,Uncompressed (32-bit),0.0493927,32,1204.98,1
+web-edu,Delta + VByte,0.0154514,10.0105,590.352,1
+web-edu,Your Algorithm (Tree+VB),0.0135641,8.78777,495.507,1
+web-edu,Your Algorithm (Tree+VB SACT),0.0112152,7.26599,529.881,1
+web-EPA,Uncompressed (32-bit),0.0679703,32,746.317,1
+web-EPA,Delta + VByte,0.0228996,10.781,425.693,1
+web-EPA,Your Algorithm (Tree+VB),0.0235462,11.0854,412.744,1
+web-EPA,Your Algorithm (Tree+VB SACT),0.0206213,9.70838,415.236,1
+web-google,Uncompressed (32-bit),0.0211563,32,730.722,1
+web-google,Delta + VByte,0.00751591,11.3682,430.855,1
+web-google,Your Algorithm (Tree+VB),0.00499153,7.54995,506.087,1
+web-google,Your Algorithm (Tree+VB SACT),0.00448227,6.77966,527.343,1
+web-hudong,Uncompressed (32-bit),110.08,32,689.084,1
+web-hudong,Delta + VByte,56.9917,16.5674,155.358,1
+web-hudong,Your Algorithm (Tree+VB),75.5828,21.9718,123.325,1
+web-hudong,Your Algorithm (Tree+VB SACT),65.5103,19.0437,150.02,1
+web-it-2004,Uncompressed (32-bit),54.7669,32,1171.71,1
+web-it-2004,Delta + VByte,15.1068,8.8268,616.472,1
+web-it-2004,Your Algorithm (Tree+VB),5.05908,2.95599,500.227,1
+web-it-2004,Your Algorithm (Tree+VB SACT),3.72568,2.17689,474.753,1
+web-italycnr-2000,Uncompressed (32-bit),20.8967,32,873.573,1
+web-italycnr-2000,Delta + VByte,6.16416,9.43945,431.888,1
+web-italycnr-2000,Your Algorithm (Tree+VB),5.39146,8.25618,288.755,1
+web-italycnr-2000,Your Algorithm (Tree+VB SACT),3.36626,5.15491,302.475,1
+web-NotreDame,Uncompressed (32-bit),8.31686,32,672.793,1
+web-NotreDame,Delta + VByte,3.29274,12.6692,287.98,1
+web-NotreDame,Your Algorithm (Tree+VB),2.77086,10.6612,233.32,1
+web-NotreDame,Your Algorithm (Tree+VB SACT),2.16508,8.33036,231.973,1
+web-Stanford,Uncompressed (32-bit),15.2026,32,624.433,1
+web-Stanford,Delta + VByte,7.93858,16.7099,171.42,1
+web-Stanford,Your Algorithm (Tree+VB),4.22689,8.8972,148.022,1
+web-Stanford,Your Algorithm (Tree+VB SACT),3.34798,7.04718,160.823,1
+web-uk-2005,Uncompressed (32-bit),89.6,32,1301.36,1
+web-uk-2005,Delta + VByte,22.6338,8.08352,740.37,1
+web-uk-2005,Your Algorithm (Tree+VB),1.60007,0.571453,463.907,1
+web-uk-2005,Your Algorithm (Tree+VB SACT),1.24434,0.444408,443.326,1
+web-wiki-ch-internal,Uncompressed (32-bit),68.3357,32,671.85,1
+web-wiki-ch-internal,Delta + VByte,33.2258,15.5589,158.835,1
+web-wiki-ch-internal,Your Algorithm (Tree+VB),44.3458,20.7661,141.949,1
+web-wiki-ch-internal,Your Algorithm (Tree+VB SACT),37.5932,17.604,154.587,1
