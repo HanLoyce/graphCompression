@@ -1,0 +1,25 @@
+Dataset,Algorithm,Data_MB,BPE,MEPS,Correct
+sc-ldoor,Uncompressed (32-bit),158.469,32,796.097,1
+sc-ldoor,SOTA,45.4371,6.6112,465.638,1
+sc-ldoor,Your Algorithm (Tree+VB SACT),22.1059,4.46391,484.194,1
+sc-msdoor,Uncompressed (32-bit),71.5534,32,721.637,1
+sc-msdoor,SOTA,20.6787,6.4896,469.537,1
+sc-msdoor,Your Algorithm (Tree+VB SACT),11.4936,5.14016,477.244,1
+sc-TSOPF-RS-b2383-c1,Uncompressed (32-bit),122.95,32,2525.49,1
+sc-TSOPF-RS-b2383-c1,SOTA,30.8914,0.2784,1349.18,1
+sc-TSOPF-RS-b2383-c1,Your Algorithm (Tree+VB SACT),1.3581,0.353469,635.368,1
+soc-catster,Uncompressed (32-bit),41.5664,32,1702.33,1
+soc-catster,SOTA,12.418,10.32,417.378,1
+soc-catster,Your Algorithm (Tree+VB SACT),12.1005,9.31561,267.344,1
+soc-livejournal,Uncompressed (32-bit),213.112,32,750.564,1
+soc-livejournal,SOTA,117.39,25.9136,202.083,1
+soc-livejournal,Your Algorithm (Tree+VB SACT),132.997,19.9703,171.52,1
+tech-ip,Uncompressed (32-bit),165.127,32,1402.1,1
+tech-ip,SOTA,64.8293,17.7856,414.73,1
+tech-ip,Your Algorithm (Tree+VB SACT),57.2353,11.0917,319.813,1
+web-uk-2005,Uncompressed (32-bit),89.6,32,2191.63,1
+web-uk-2005,SOTA,22.6338,0.8672,1429.43,1
+web-uk-2005,Your Algorithm (Tree+VB SACT),1.24434,0.444408,680.982,1
+web-it-2004-all,Uncompressed (32-bit),7982,32,1231,1
+web-it-2004-all,SOTA,1367.31,5.4816,2342,1
+web-it-2004-all,Your Algorithm (Tree+VB SACT),1163.7,4.7504,278.924,1
