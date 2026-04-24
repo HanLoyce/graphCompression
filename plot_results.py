@@ -1,158 +1,263 @@
-import pandas as pd
+import csv
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
-import csv
+import pandas as pd
 
-EXPECTED_COLUMNS = ['Dataset', 'Algorithm', 'Data_MB', 'BPE', 'MEPS', 'Correct']
-TARGET_ALGOS = [
-    'Uncompressed (32-bit)',
-    'SOTA',
-    'Your Algorithm (Tree+VB SACT)'
+BASE_COLUMNS = ["Dataset", "Algorithm", "Data_MB", "BPE", "Correct"]
+ALGO_ORDER = [
+    "Uncompressed (32-bit)",
+    "SOTA",
+    "Your Algorithm (Tree+VB)",
+    "Your Algorithm (Tree+NoVB+NewTree)",
 ]
+DISPLAY_NAMES = {
+    "Uncompressed (32-bit)": "Uncompressed (32-bit)",
+    "SOTA": "SOTA",
+    "Your Algorithm (Tree+VB)": "Tree+VB",
+    "Your Algorithm (Tree+NoVB+NewTree)": "Tree+NoVB+NewTree",
+}
 
 
-def load_benchmark_csv(csv_path='benchmark_results.csv'):
-    """Read benchmark CSV and repair malformed rows split by numeric commas."""
+def load_benchmark_csv(csv_path: Path) -> pd.DataFrame:
+    """Load benchmark CSV and normalize schema.
+
+    Supports both old format (with MEPS) and new format (without MEPS).
+    """
     rows = []
     bad_rows = 0
 
-    with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+    with csv_path.open("r", encoding="utf-8", newline="") as f:
         reader = csv.reader(f)
         header = next(reader, None)
         if header is None:
-            return pd.DataFrame(columns=EXPECTED_COLUMNS)
+            return pd.DataFrame(columns=BASE_COLUMNS)
+
+        has_meps = "MEPS" in header
+        expected_len = 6 if has_meps else 5
 
         for row in reader:
             if not row:
                 continue
 
-            if len(row) == 6:
+            if len(row) == expected_len:
                 rows.append(row)
                 continue
 
-            if len(row) > 6:
-                # e.g. Data_MB was written like 1,367.31 without quoting
+            if len(row) > expected_len:
+                # Repair rows where Data_MB contains thousand separators.
                 dataset = row[0]
                 algorithm = row[1]
                 correct = row[-1]
-                meps = row[-2]
-                bpe = row[-3]
-                data_mb = ''.join(part.strip() for part in row[2:-3])
-                rows.append([dataset, algorithm, data_mb, bpe, meps, correct])
+                bpe = row[-2] if not has_meps else row[-3]
+                data_mb = "".join(part.strip() for part in row[2 : -2 if not has_meps else -3])
+
+                if has_meps:
+                    meps = row[-2]
+                    rows.append([dataset, algorithm, data_mb, bpe, meps, correct])
+                else:
+                    rows.append([dataset, algorithm, data_mb, bpe, correct])
                 bad_rows += 1
                 continue
 
             bad_rows += 1
 
     if bad_rows > 0:
-        print(f"警告: 已自动修复/跳过 {bad_rows} 行异常 CSV 记录。")
+        print(f"Warning: auto-repaired/skipped {bad_rows} malformed rows in {csv_path.name}.")
 
-    return pd.DataFrame(rows, columns=EXPECTED_COLUMNS)
+    df = pd.DataFrame(rows, columns=header)
 
-# 1. 读取 C++ 导出的 CSV 文件
-try:
-    df = load_benchmark_csv('benchmark_results.csv')
-except FileNotFoundError:
-    print("错误: 找不到 benchmark_results.csv，请先运行 C++ 编译好的程序。")
-    exit()
+    for col in ["Data_MB", "BPE", "Correct"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
-if df.empty:
-    print("错误: benchmark_results.csv 没有可用数据，无法绘图。")
-    exit()
+    df = df.dropna(subset=["Dataset", "Algorithm", "BPE"])
 
-for col in ['Data_MB', 'BPE', 'MEPS', 'Correct']:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+    # Keep only normalized columns needed for table/plot.
+    for col in BASE_COLUMNS:
+        if col not in df.columns:
+            df[col] = np.nan
 
-df = df.dropna(subset=['Dataset', 'Algorithm', 'BPE'])
-if df.empty:
-    print("错误: 清洗后无有效记录，无法绘图。")
-    exit()
+    return df[BASE_COLUMNS]
 
-# 获取数据集中所有的图名字
-datasets = df['Dataset'].unique()
 
-# 只画三个目标算法（若缺失则自动跳过并提示）
-all_algos = set(df['Algorithm'].dropna().unique())
-algos = [a for a in TARGET_ALGOS if a in all_algos]
-missing_algos = [a for a in TARGET_ALGOS if a not in all_algos]
-if missing_algos:
-    print("警告: 以下算法在 CSV 中不存在，将不绘制: " + ", ".join(missing_algos))
+def load_external_sota_csv(csv_path: Path) -> pd.DataFrame:
+    """Load optional external SOTA data.
 
-if not algos:
-    print("错误: 三个目标算法都不存在，无法绘图。")
-    exit()
+    Supported schemas:
+    1) Full schema like benchmark: Dataset,Algorithm,Data_MB,BPE,(MEPS),Correct
+    2) Minimal schema: Dataset,BPE
+    """
+    if not csv_path.exists():
+        print(f"Info: external SOTA file not found, skip merge: {csv_path}")
+        return pd.DataFrame(columns=BASE_COLUMNS)
 
-# 图例展示名称（不影响数据筛选键）
-display_names = {
-    'Uncompressed (32-bit)': 'Uncompressed (32-bit)',
-    'SOTA': 'SOTA',
-    'Your Algorithm (Tree+VB SACT)': 'Tree+VB v1'
-}
+    raw = pd.read_csv(csv_path)
+    raw_cols = {c.strip(): c for c in raw.columns}
 
-# 颜色和标记
-base_colors = {
-    'Uncompressed (32-bit)': '#95a5a6',
-    'SOTA': '#e74c3c',
-    'Your Algorithm (Tree+VB SACT)': '#16a085'
-}
-base_markers = {
-    'Uncompressed (32-bit)': 's',
-    'SOTA': '^',
-    'Your Algorithm (Tree+VB SACT)': 'D'
-}
-base_linestyles = {
-    'Uncompressed (32-bit)': '-',
-    'SOTA': '--',
-    'Your Algorithm (Tree+VB SACT)': '-'
-}
-colors = {a: base_colors[a] for a in algos}
-markers = {a: base_markers[a] for a in algos}
-linestyles = {a: base_linestyles[a] for a in algos}
+    # Allow ratio-only external data. Ratio is percentage of uncompressed (32-bit).
+    if "BPE" not in raw_cols:
+        ratio_keys = ["Ratio", "RatioPercent", "CompressionRatio", "Compression_Ratio", "Ratio_%"]
+        ratio_col = next((k for k in ratio_keys if k in raw_cols), None)
+        if ratio_col is not None and "Dataset" in raw_cols:
+            ratio_series = pd.to_numeric(raw[raw_cols[ratio_col]], errors="coerce")
+            bpe_series = ratio_series * 32.0 / 100.0
+            df = pd.DataFrame(
+                {
+                    "Dataset": raw[raw_cols["Dataset"]],
+                    "Algorithm": "SOTA",
+                    "Data_MB": np.nan,
+                    "BPE": bpe_series,
+                    "Correct": 1,
+                }
+            )
+            return df.dropna(subset=["Dataset", "BPE"])
 
-# ==========================================
-# 图 1: 压缩比比较 (相对未压缩基线, %)
-# ==========================================
-plt.figure(figsize=(10, 6))
+    if "Dataset" in raw_cols and "BPE" in raw_cols:
+        # Minimal schema: auto-tag as SOTA.
+        if "Algorithm" not in raw_cols:
+            df = pd.DataFrame(
+                {
+                    "Dataset": raw[raw_cols["Dataset"]],
+                    "Algorithm": "SOTA",
+                    "Data_MB": np.nan,
+                    "BPE": pd.to_numeric(raw[raw_cols["BPE"]], errors="coerce"),
+                    "Correct": 1,
+                }
+            )
+            return df.dropna(subset=["Dataset", "BPE"])
 
-# 以每个数据集的未压缩 BPE 作为基线，计算压缩比 = 当前BPE/基线BPE * 100
-baseline_bpe = (
-    df[df['Algorithm'] == 'Uncompressed (32-bit)'][['Dataset', 'BPE']]
-    .drop_duplicates('Dataset')
-    .set_index('Dataset')['BPE']
-)
+        # Full schema or mixed schema.
+        for col in BASE_COLUMNS:
+            if col not in raw.columns:
+                raw[col] = np.nan
 
-for algo in algos:
-    algo_data = df[df['Algorithm'] == algo]
-    if algo_data.empty:
-        continue
-    
-    # 按 datasets 的顺序对齐数据
-    algo_data = algo_data.set_index('Dataset').reindex(datasets)
+        raw["BPE"] = pd.to_numeric(raw["BPE"], errors="coerce")
+        raw["Data_MB"] = pd.to_numeric(raw["Data_MB"], errors="coerce")
+        raw["Correct"] = pd.to_numeric(raw["Correct"], errors="coerce")
 
-    # 防御性处理：用基线换算压缩比，并处理 inf/-inf 与除零
-    ratio_values = (algo_data['BPE'] / baseline_bpe.reindex(algo_data.index) * 100.0)
-    ratio_values = ratio_values.replace([np.inf, -np.inf], np.nan)
+        df = raw[BASE_COLUMNS].dropna(subset=["Dataset", "Algorithm", "BPE"])
+        # Keep only SOTA rows from external file to avoid accidental override of your runs.
+        df = df[df["Algorithm"].astype(str).str.upper().str.contains("SOTA")].copy()
+        df["Algorithm"] = "SOTA"
+        return df
 
-    marker_face = colors[algo]
-    z = 3
-    
-    plt.plot(algo_data.index, ratio_values,
-             marker=markers[algo], markersize=9, linewidth=2.5,
-             linestyle=linestyles[algo], markerfacecolor=marker_face,
-             markeredgewidth=1.8, zorder=z,
-             color=colors[algo], label=display_names.get(algo, algo))
+    print(f"Warning: unsupported SOTA schema in {csv_path}. Expected columns include Dataset and BPE.")
+    return pd.DataFrame(columns=BASE_COLUMNS)
 
-plt.title('Compression Ratio Comparison (Lower is Better)', fontsize=16, fontweight='bold')
-plt.xlabel('Graph Datasets', fontsize=14)
-plt.ylabel('Compression Ratio (% of Uncompressed)', fontsize=14)
-plt.xticks(fontsize=12, rotation=15) # 稍微倾斜数据集名字，防止重叠
-plt.yticks(fontsize=12)
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.legend(fontsize=12)
-plt.tight_layout()
 
-# 保存高质量图表
-plt.savefig('compression_ratio_comparison.png', dpi=300)
-print("✅ 成功生成压缩比折线图: compression_ratio_comparison.png")
+def merge_results(base_df: pd.DataFrame, sota_df: pd.DataFrame) -> pd.DataFrame:
+    # Remove existing SOTA rows from base, then inject external SOTA for same datasets.
+    base_no_sota = base_df[base_df["Algorithm"] != "SOTA"].copy()
+    merged = pd.concat([base_no_sota, sota_df], ignore_index=True)
 
-plt.show() # 如果在带界面的系统运行，直接弹出预览窗口
+    merged["algo_rank"] = merged["Algorithm"].apply(
+        lambda x: ALGO_ORDER.index(x) if x in ALGO_ORDER else len(ALGO_ORDER)
+    )
+    merged = merged.sort_values(["Dataset", "algo_rank", "BPE"], kind="stable").drop(columns=["algo_rank"])
+
+    # Deduplicate by dataset+algorithm, keep last one (external SOTA wins when duplicated).
+    merged = merged.drop_duplicates(subset=["Dataset", "Algorithm"], keep="last")
+    return merged
+
+
+def export_tables(df: pd.DataFrame):
+    result_dir = Path(__file__).resolve().parent.parent / "result"
+    result_dir.mkdir(parents=True, exist_ok=True)
+
+    long_path = result_dir / "final_comparison_table.csv"
+    df.to_csv(long_path, index=False)
+
+    wide = df.pivot(index="Dataset", columns="Algorithm", values="BPE").reset_index()
+    wide_path = result_dir / "final_comparison_table_wide.csv"
+    wide.to_csv(wide_path, index=False)
+
+    print(f"Generated table: {long_path}")
+    print(f"Generated table: {wide_path}")
+
+
+def plot_ratio(df: pd.DataFrame):
+    result_dir = Path(__file__).resolve().parent.parent / "result"
+    result_dir.mkdir(parents=True, exist_ok=True)
+
+    datasets = df["Dataset"].dropna().unique()
+    all_algos = set(df["Algorithm"].dropna().unique())
+    algos = [a for a in ALGO_ORDER if a in all_algos]
+
+    if "Uncompressed (32-bit)" not in all_algos:
+        print("Warning: no Uncompressed (32-bit) baseline, skip ratio figure.")
+        return
+
+    baseline_bpe = (
+        df[df["Algorithm"] == "Uncompressed (32-bit)"][ ["Dataset", "BPE"] ]
+        .drop_duplicates("Dataset")
+        .set_index("Dataset")["BPE"]
+    )
+
+    colors = {
+        "Uncompressed (32-bit)": "#95a5a6",
+        "SOTA": "#e74c3c",
+        "Your Algorithm (Tree+VB)": "#2980b9",
+        "Your Algorithm (Tree+NoVB+NewTree)": "#16a085",
+    }
+    markers = {
+        "Uncompressed (32-bit)": "s",
+        "SOTA": "^",
+        "Your Algorithm (Tree+VB)": "o",
+        "Your Algorithm (Tree+NoVB+NewTree)": "D",
+    }
+
+    plt.figure(figsize=(10, 6))
+
+    for algo in algos:
+        algo_data = df[df["Algorithm"] == algo].set_index("Dataset").reindex(datasets)
+        ratio_values = algo_data["BPE"] / baseline_bpe.reindex(algo_data.index) * 100.0
+        ratio_values = ratio_values.replace([np.inf, -np.inf], np.nan)
+
+        plt.plot(
+            algo_data.index,
+            ratio_values,
+            marker=markers.get(algo, "o"),
+            markersize=8,
+            linewidth=2.2,
+            color=colors.get(algo, "#333333"),
+            label=DISPLAY_NAMES.get(algo, algo),
+        )
+
+    plt.title("Compression Ratio Comparison (Lower is Better)", fontsize=16, fontweight="bold")
+    plt.xlabel("Graph Datasets", fontsize=13)
+    plt.ylabel("Compression Ratio (% of Uncompressed)", fontsize=13)
+    plt.xticks(rotation=15)
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.legend(fontsize=11)
+    plt.tight_layout()
+    figure_path = result_dir / "compression_ratio_comparison.png"
+    plt.savefig(figure_path, dpi=300)
+    print(f"Generated chart: {figure_path}")
+    plt.show()
+
+
+def main():
+    workspace_root = Path(__file__).resolve().parent.parent
+    base_csv = workspace_root / "result" / "benchmark_results_newtree.csv"
+    sota_csv = workspace_root / "result" / "vssota.csv"
+
+    if not base_csv.exists():
+        print("Error: benchmark_results_newtree.csv not found. Run benchmark first.")
+        return
+
+    base_df = load_benchmark_csv(base_csv)
+    if base_df.empty:
+        print("Error: benchmark_results_newtree.csv has no usable records.")
+        return
+
+    sota_df = load_external_sota_csv(sota_csv)
+    merged_df = merge_results(base_df, sota_df)
+
+    export_tables(merged_df)
+    plot_ratio(merged_df)
+
+
+if __name__ == "__main__":
+    main()
